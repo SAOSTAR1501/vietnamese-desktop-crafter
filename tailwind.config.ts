@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				calculator: {
+					display: 'hsl(210, 30%, 20%)',
+					button: {
+						number: 'hsl(210, 30%, 95%)',
+						operator: 'hsl(196, 83%, 75%)',
+						action: 'hsl(190, 90%, 50%)',
+						equal: 'hsl(176, 90%, 35%)'
+					}
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -84,11 +94,23 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'button-press': {
+					'0%': {
+						transform: 'scale(1)'
+					},
+					'50%': {
+						transform: 'scale(0.95)'
+					},
+					'100%': {
+						transform: 'scale(1)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'button-press': 'button-press 0.15s ease-in-out'
 			}
 		}
 	},
