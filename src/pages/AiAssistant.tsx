@@ -1,11 +1,15 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toast } from '@/components/ui/use-toast';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { LinkPreview } from '@/components/LinkPreview';
+
+// URL regex pattern to find links in text
+const URL_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
 
 const AiAssistant = () => {
   const [apiKey, setApiKey] = useState<string>(() => {
@@ -15,6 +19,7 @@ const AiAssistant = () => {
   const [response, setResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [conversations, setConversations] = useState<{question: string, answer: string}[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Save API key to localStorage when it changes
   const saveApiKey = (key: string) => {
@@ -24,6 +29,35 @@ const AiAssistant = () => {
       title: "API Key đã được lưu",
       description: "Khóa API Gemini của bạn đã được lưu trữ cục bộ",
     });
+  };
+
+  // Extract URLs from text
+  const extractUrls = (text: string): string[] => {
+    return text.match(URL_REGEX) || [];
+  };
+
+  // Handle the user pasting content
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pastedText = e.clipboardData.getData('text');
+    const urls = extractUrls(pastedText);
+    
+    if (urls.length > 0) {
+      setPreviewUrl(urls[0]);
+    }
+  };
+
+  // Handle text change to detect URLs
+  const handleQueryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setQuery(newText);
+    
+    // Check if there's a URL in the text
+    const urls = extractUrls(newText);
+    if (urls.length > 0) {
+      setPreviewUrl(urls[0]);
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,8 +95,9 @@ const AiAssistant = () => {
         ...prev
       ]);
       
-      // Clear query field
+      // Clear query field and preview
       setQuery('');
+      setPreviewUrl(null);
     } catch (error) {
       console.error('Error fetching from Gemini:', error);
       toast({
@@ -162,12 +197,16 @@ const AiAssistant = () => {
       <div className="flex-1 grid gap-4 md:grid-cols-5">
         <div className="md:col-span-3 space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea 
-              placeholder="Hỏi trợ lý AI bất kỳ câu hỏi gì về toán học, tính toán, hoặc bất kỳ chủ đề nào khác..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="min-h-[120px]"
-            />
+            <div>
+              <Textarea 
+                placeholder="Hỏi trợ lý AI bất kỳ câu hỏi gì về toán học, tính toán, hoặc bất kỳ chủ đề nào khác..."
+                value={query}
+                onChange={handleQueryChange}
+                onPaste={handlePaste}
+                className="min-h-[120px]"
+              />
+              {previewUrl && <LinkPreview url={previewUrl} />}
+            </div>
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? 'Đang xử lý...' : 'Gửi câu hỏi'}
             </Button>
@@ -178,7 +217,13 @@ const AiAssistant = () => {
             {isLoading ? (
               <div className="animate-pulse text-muted-foreground">Đang suy nghĩ...</div>
             ) : response ? (
-              <div className="whitespace-pre-line">{response}</div>
+              <div className="whitespace-pre-line">
+                {response}
+                {/* Display link previews in the response */}
+                {extractUrls(response).map((url, idx) => (
+                  <LinkPreview key={idx} url={url} />
+                ))}
+              </div>
             ) : (
               <div className="text-muted-foreground">Câu trả lời sẽ xuất hiện ở đây</div>
             )}
